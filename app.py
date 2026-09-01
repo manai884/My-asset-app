@@ -4,8 +4,41 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 
+# 1. ページ基本設定
 st.set_page_config(page_title="MyFP 資産管理ダッシュボード", layout="wide")
 
+# ==========================================
+# 🔒 2. パスワード保護ロジック（ここを最初に追加）
+# ==========================================
+def check_password():
+    def password_entered():
+        # 👇 「1234」をお好みのパスワード（英数字など）に変更してください
+        if st.session_state["password"] == "1234":
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        st.title("🔒 資産管理ダッシュボード")
+        st.text_input("パスワードを入力してください", type="password", on_change=password_entered, key="password")
+        st.info("※認証後に資産データが表示されます。")
+        return False
+    elif not st.session_state["password_correct"]:
+        st.title("🔒 資産管理ダッシュボード")
+        st.text_input("パスワードを入力してください", type="password", on_change=password_entered, key="password")
+        st.error("パスワードが正しくありません")
+        return False
+    else:
+        return True
+
+# パスワードが一致しない場合はここで処理を停止（これより下の画面は描画されません）
+if not check_password():
+    st.stop()
+
+# ==========================================
+# 📊 3. ここから下がメインダッシュボード画面
+# ==========================================
 st.title("💼 資産管理 & NISAポートフォリオ ダッシュボード")
 
 # --- サイドバー：月次データ入力 ---
@@ -76,7 +109,6 @@ with col_right:
     years = np.arange(0, 11)
     future_values = []
     for y in years:
-        # 元本複利 + 積立複利計算
         fv = (nisa_total * ((1 + annual_return) ** y) + 
               (monthly_invest * 12) * (((1 + annual_return) ** y - 1) / annual_return)) if annual_return > 0 else nisa_total + (monthly_invest * 12 * y)
         future_values.append(fv)
